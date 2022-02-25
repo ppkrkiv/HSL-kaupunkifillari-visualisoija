@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='tyyli.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
+    <script src="{{ url_for('static', filename='leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='heatmap.js') }}"></script>
+    <script src="{{ url_for('static', filename='leaflet-heatmap.js') }}"></script>
+    <script src="{{ url_for('static', filename='kuvaInfo.js') }}"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;700&display=swap" rel="stylesheet">
+
+    <link rel="shortcut icon" type="image/png" href="static/fillari.png"/>
+    <title>Kaupunkipyörä - Visualisoija</title>
+</head>
+
+<body>
+    <div class="loader"></div>
+    <div id="main">
+        <div id="kartta"></div>
+        <section class = "container">
+            <div id=sivupalkki>
+    
+                <!-- superupee laskuri
+                <div>
+                    <input type=text size=5 name=a> +
+                    <input type=text size=5 name=b> =
+                    <span id=result>?</span>
+                    <a href=# id=calculate>calculate server side</a>
+                </div>
+                -->
+            <div id = "sidebar_button">
+                <span id="sidenavButton">&#9776;<!--tähän voi laittaa tekstin halutessa, pelkän ikonin kanssa hieman huomaamaton ehkä(?)--></span>
+            </div>
+            <div id="mySidenav" class="sidenav">
+                <div id="sidenavTop">
+                    <p id="sivupalkki_otsikko">Valinnat</p>
+                    <a href="#" class="closebtn" id="closeSidebar">&times;</a>
+                </div>
+                <!--tänne laitetaan sivupalkin sisältö-->
+                <div id="valinnat">
+                    
+                    <div id="asemacontainer">
+                        <label id="asemahaku"> Hae asemaa: <input id="asemavalinta" type="input" list="asemalista" name="haku"  />
+                            <datalist id="asemalista">
+                            </datalist>
+                        </label>
+                    </div>
+                        
+                    <div>
+                        <span>Valitse ajankohta:</span>
+                        <select name="vuodet" id="vvselect" class="drop"></select>
+                        <select name="kuukaudet" id="kkselect" class="drop"></select>
+                        <select name="paivat" id="pvselect" class="drop">
+                            <option value="0">--Valitse päivä--</option>
+                        </select>
+                    </div>
+
+                    <div> 
+                        <span>Luodaanko lämpökartta lähtö- vai paluuaseman mukaan?</span>
+                        <div class="radiolabel valittuRadio">
+                            <label> Lähtö 
+                                <input checked="checked" type="radio" name="radiovalinta" value="1"/>
+                            </label>
+                        </div>                        
+                        <div class="radiolabel">
+                            <label> Paluu
+                                <input type="radio" name="radiovalinta" value="2"/>
+                            </label>
+                        </div>
+                        <div class="radiolabel">
+                            <label> Lähtö ja paluu 
+                                <input type="radio" name="radiovalinta" value="3"/>
+                            </label>
+                        </div>
+                        <button id="testiButtonPvm">Hae matkat</button>
+                    </div>
+                    
+                </div>
+                
+                <!--tänne myHelsinkiAPI:n sisältö-->
+                <div id="myHki">
+                    <div id="kuvaDIV">
+                        <p>
+                            <img alt="Kuva nähtävyydestä." id="hkiKuva" src="https://finna.fi/Cover/Show?id=hkm.HKMS000005:000008yh&fullres=1&index=0">                             
+                        </p>
+                    </div>
+                    <div id="hkiInfo">Pyöräilyä Helsingissä
+                        <span>Kuva: Tuntematon / <a target="_blank" rel="noopener noreferrer" href="https://www.helsinkikuvia.fi/">Helsinkikuvia</a></span>
+                    </div>
+                </div>
+                
+            </div>
+
+            </div>
+            </div>
+        </section>
+        <div id="infopalkki">
+            <div id="info_content">
+                <ul>
+                    <li id="infoPvm" class="infoLi">Ajankohta: </li>
+                    <li id="infoMkpl" class="infoLi">Matkoja yhteensä:</li>
+                    <li id="infoKmyht" class="infoLi">Kilometrejä yhteensä:</li>
+                    <li id="infoTyht" class="infoLi">Tunteja yhteensä:</li>
+                    <li id="infoKnop" class="infoLi">Keskinopeus:</li>
+                    <li id="infoSak" class="infoLi">Sakkoja yhteensä:</li> <!---yli 5h matkat-->                    
+                </ul>
+                <div id="infoApua" class="infoLi">?</div>
+            </div>
+        </div>
+
+        <div id="ylapalkki">
+            <p id="nahtavyys_text">Nähtävyydet:</p>
+            <label class="switch">
+                <input type="checkbox" id="switch_valinta"> 
+                <span class="slider"></span> 
+            </label>
+            <button id="aboutUs_button">About us</button>
+        </div>
+        
+        <div id="popup"> 
+            <h2 id="popup_otsikko">Help ~ Apua</h2>
+            <p id="popup_teksti">Ohjelman tarkoituksena on visualisoida kaupunkipyörien käyttöastetta Pääkaupunkiseudulla ajalta, jolta avointa dataa 
+                                on saatavilla (2017-2021 <i>a.i.</i>). </br></br> Käyttäjänä sinulla on mahdollisuus tutkia yksittäisiä pysäkkejä, joko 
+                                karttaa pyörittelemällä tai "pysäkkihaku"-ominaisuutta käyttäen. Lisäksi Pääkaupunkiseudun nähtävyydet ja pientä infoa on saatavilla oikean yläkulman on/off painikkeesta. </br></br> Tärkein ominaisuus on kuitenkin päivämäärän avulla matkojen tutkiminen.
+                                Voit tutkia kaupunkipyörillä kuljettuja matkoja kauden, kuukauden tai päivän mukaan. Tulostuva lämpökartta voidaan myös toteutta lähtö- ja maaliasemien tai
+                                molempien perusteella, valinnan mukaan. </br></br> 
+                                 </p>
+        </div>
+
+    </div>
+</body>
+</html>
